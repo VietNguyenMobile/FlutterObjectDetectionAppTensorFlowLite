@@ -21,7 +21,7 @@ class _MySplashPageState extends State<MySplashPage> {
           color: Colors.white,
         ),
       ),
-      seconds: 12,
+      seconds: 2,
       imageBackground: Image.asset("assets/back.jpg").image,
       loaderColor: Colors.pink,
       backgroundColor: Colors.pink,
