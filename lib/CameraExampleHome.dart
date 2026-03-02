@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart';
 import 'dart:io';
 import 'package:logger/logger.dart';
+import 'package:tflite_flutter/tflite_flutter.dart';
 
 class CameraExampleHome extends StatefulWidget {
   const CameraExampleHome({super.key, required this.cameras});
@@ -35,11 +36,41 @@ class _CameraExampleHomeState extends State<CameraExampleHome> {
   @override
   void initState() {
     super.initState();
-    final ImageLabelerOptions options = ImageLabelerOptions(
+    // final ImageLabelerOptions options = ImageLabelerOptions(
+    //   confidenceThreshold: 0.5,
+    // );
+    // imageLabeler = ImageLabeler(options: options);
+
+    // local model
+    loadModelLocal();
+    _initializeCamera();
+  }
+
+  loadModelLocal() async {
+    final modelPath = await getModelPath('assets/ml/fruits_tm.tflite');
+    // final modelPath = await getModelPath('assets/ml/model_mobilenet.tflite');
+
+    final options = LocalLabelerOptions(
       confidenceThreshold: 0.5,
+      modelPath: modelPath,
     );
     imageLabeler = ImageLabeler(options: options);
-    _initializeCamera();
+  }
+
+  Future<String> getModelPath(String asset) async {
+    final path = '${(await getApplicationSupportDirectory()).path}/$asset';
+    await Directory(dirname(path)).create(recursive: true);
+    final file = File(path);
+    if (!await file.exists()) {
+      final byteData = await rootBundle.load(asset);
+      await file.writeAsBytes(
+        byteData.buffer.asUint8List(
+          byteData.offsetInBytes,
+          byteData.lengthInBytes,
+        ),
+      );
+    }
+    return file.path;
   }
 
   Future<void> _initializeCamera() async {
