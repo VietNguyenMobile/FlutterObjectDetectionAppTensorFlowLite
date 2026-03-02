@@ -9,10 +9,11 @@ import 'package:camera/camera.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mlkit_object_detection/google_mlkit_object_detection.dart';
 
-late List<CameraDescription> cameras;
+// late List<CameraDescription> cameras;
 
 class RealTimeDetect extends StatefulWidget {
-  const RealTimeDetect({super.key});
+  const RealTimeDetect({super.key, required this.cameras});
+  final List<CameraDescription> cameras;
 
   @override
   State<RealTimeDetect> createState() => _RealTimeDetectState();
@@ -43,7 +44,7 @@ class _RealTimeDetectState extends State<RealTimeDetect> {
     objectDetector = ObjectDetector(options: options);
 
     //TODO initialize controller
-    controller = CameraController(cameras[0], ResolutionPreset.high);
+    controller = CameraController(widget.cameras[0], ResolutionPreset.high);
     await controller.initialize().then((_) {
       if (!mounted) {
         return;
@@ -89,7 +90,7 @@ class _RealTimeDetectState extends State<RealTimeDetect> {
     // it is used in android to convert the InputImage from Dart to Java
     // `rotation` is not used in iOS to convert the InputImage from Dart to Obj-C
     // in both platforms `rotation` and `camera.lensDirection` can be used to compensate `x` and `y` coordinates on a canvas
-    final camera = cameras[0];
+    final camera = widget.cameras[0];
     final sensorOrientation = camera.sensorOrientation;
     InputImageRotation? rotation;
     if (Platform.isIOS) {
