@@ -10,6 +10,8 @@ import 'package:flutter/services.dart';
 import 'package:google_mlkit_object_detection/google_mlkit_object_detection.dart';
 import 'package:google_mlkit_image_labeling/google_mlkit_image_labeling.dart';
 import 'package:logger/logger.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart';
 
 // late List<CameraDescription> cameras;
 
@@ -32,20 +34,21 @@ class _RealTimeDetectState extends State<RealTimeDetect> {
   @override
   void initState() {
     super.initState();
+    loadModelLocal();
     initializeCamera();
   }
 
   //TODO code to initialize the camera feed
   initializeCamera() async {
     //TODO initialize detector
-    const mode = DetectionMode.stream;
-    // Options to configure the detector while using with base model.
-    final options = ObjectDetectorOptions(
-      mode: mode,
-      classifyObjects: true,
-      multipleObjects: true,
-    );
-    objectDetector = ObjectDetector(options: options);
+    // const mode = DetectionMode.stream;
+    // // Options to configure the detector while using with base model.
+    // final options = ObjectDetectorOptions(
+    //   mode: mode,
+    //   classifyObjects: true,
+    //   multipleObjects: true,
+    // );
+    // objectDetector = ObjectDetector(options: options);
 
     //TODO initialize controller
     // controller = CameraController(widget.cameras[0], ResolutionPreset.high);
@@ -64,15 +67,40 @@ class _RealTimeDetectState extends State<RealTimeDetect> {
       }
       controller.startImageStream(
         (image) => {
-          if (!isBusy)
-            {
-              isBusy = true,
-              img = image,
-              doObjectDetectionOnFrame()
-            },
+          if (!isBusy) {isBusy = true, img = image, doObjectDetectionOnFrame()},
         },
       );
     });
+  }
+
+  loadModelLocal() async {
+    // final modelPath = await getModelPath('assets/ml/safe_unsafe.tflite');
+    final modelPath = await getModelPath('assets/ml/fruits_tm.tflite');
+    // final modelPath = await getModelPath('assets/ml/model_mobilenet.tflite');
+
+    final options = LocalObjectDetectorOptions(
+      mode: DetectionMode.stream,
+      classifyObjects: true,
+      multipleObjects: true,
+      modelPath: modelPath,
+    );
+    objectDetector = ObjectDetector(options: options);
+  }
+
+  Future<String> getModelPath(String asset) async {
+    final path = '${(await getApplicationSupportDirectory()).path}/$asset';
+    await Directory(dirname(path)).create(recursive: true);
+    final file = File(path);
+    if (!await file.exists()) {
+      final byteData = await rootBundle.load(asset);
+      await file.writeAsBytes(
+        byteData.buffer.asUint8List(
+          byteData.offsetInBytes,
+          byteData.lengthInBytes,
+        ),
+      );
+    }
+    return file.path;
   }
 
   //close all resources
@@ -198,11 +226,12 @@ class _RealTimeDetectState extends State<RealTimeDetect> {
 
       stackChildren.add(
         Positioned(
-            top: 0.0,
-            left: 0.0,
-            width: size.width,
-            height: size.height,
-            child: buildResult()),
+          top: 0.0,
+          left: 0.0,
+          width: size.width,
+          height: size.height,
+          child: buildResult(),
+        ),
       );
     }
 
@@ -252,17 +281,22 @@ class ObjectDetectorPainter extends CustomPainter {
       for (Label label in list) {
         print("${label.text}   ${label.confidence.toStringAsFixed(2)}");
         TextSpan span = TextSpan(
-            text: label.text,
-            style: const TextStyle(fontSize: 25, color: Colors.blue));
+          text: label.text,
+          style: const TextStyle(fontSize: 25, color: Colors.blue),
+        );
         TextPainter tp = TextPainter(
-            text: span,
-            textAlign: TextAlign.left,
-            textDirection: TextDirection.ltr);
+          text: span,
+          textAlign: TextAlign.left,
+          textDirection: TextDirection.ltr,
+        );
         tp.layout();
         tp.paint(
-            canvas,
-            Offset(detectedObject.boundingBox.left * scaleX,
-                detectedObject.boundingBox.top * scaleY));
+          canvas,
+          Offset(
+            detectedObject.boundingBox.left * scaleX,
+            detectedObject.boundingBox.top * scaleY,
+          ),
+        );
         break;
       }
     }
