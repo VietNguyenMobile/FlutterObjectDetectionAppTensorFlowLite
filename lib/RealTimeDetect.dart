@@ -8,11 +8,14 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mlkit_object_detection/google_mlkit_object_detection.dart';
+import 'package:google_mlkit_image_labeling/google_mlkit_image_labeling.dart';
+import 'package:logger/logger.dart';
 
 // late List<CameraDescription> cameras;
 
 class RealTimeDetect extends StatefulWidget {
   const RealTimeDetect({super.key, required this.cameras});
+
   final List<CameraDescription> cameras;
 
   @override
@@ -24,6 +27,7 @@ class _RealTimeDetectState extends State<RealTimeDetect> {
   bool isBusy = false;
   dynamic objectDetector;
   late Size size;
+  CameraImage? img;
 
   @override
   void initState() {
@@ -44,14 +48,28 @@ class _RealTimeDetectState extends State<RealTimeDetect> {
     objectDetector = ObjectDetector(options: options);
 
     //TODO initialize controller
-    controller = CameraController(widget.cameras[0], ResolutionPreset.high);
+    // controller = CameraController(widget.cameras[0], ResolutionPreset.high);
+    controller = CameraController(
+      widget.cameras[0],
+      ResolutionPreset.high, // Use a suitable resolution preset
+      enableAudio: false,
+      imageFormatGroup: Platform.isAndroid
+          ? ImageFormatGroup.nv21
+          : ImageFormatGroup.bgra8888,
+    );
+
     await controller.initialize().then((_) {
       if (!mounted) {
         return;
       }
       controller.startImageStream(
         (image) => {
-          if (!isBusy) {isBusy = true, img = image, doObjectDetectionOnFrame()},
+          if (!isBusy)
+            {
+              isBusy = true,
+              img = image,
+              doObjectDetectionOnFrame()
+            },
         },
       );
     });
@@ -67,13 +85,15 @@ class _RealTimeDetectState extends State<RealTimeDetect> {
 
   //TODO object detection on a frame
   dynamic _scanResults;
-  CameraImage? img;
+
   doObjectDetectionOnFrame() async {
-    // var frameImg = _inputImageFromCameraImage(img!);
-    // List<DetectedObject> objects = await objectDetector.processImage(frameImg);
-    // print("len= ${objects.length}");
+    InputImage? inputImage = _inputImageFromCameraImage(img!);
+    List<DetectedObject> objects = await objectDetector.processImage(
+      inputImage,
+    );
+
     setState(() {
-      //  _scanResults = objects;
+      _scanResults = objects;
       isBusy = false;
     });
   }
@@ -176,14 +196,14 @@ class _RealTimeDetectState extends State<RealTimeDetect> {
         ),
       );
 
-      // stackChildren.add(
-      //   Positioned(
-      //       top: 0.0,
-      //       left: 0.0,
-      //       width: size.width,
-      //       height: size.height,
-      //       child: buildResult()),
-      // );
+      stackChildren.add(
+        Positioned(
+            top: 0.0,
+            left: 0.0,
+            width: size.width,
+            height: size.height,
+            child: buildResult()),
+      );
     }
 
     return Scaffold(
@@ -228,23 +248,23 @@ class ObjectDetectorPainter extends CustomPainter {
         paint,
       );
 
-      // var list = detectedObject.labels;
-      // for (Label label in list) {
-      //   print("${label.text}   ${label.confidence.toStringAsFixed(2)}");
-      //   TextSpan span = TextSpan(
-      //       text: label.text,
-      //       style: const TextStyle(fontSize: 25, color: Colors.blue));
-      //   TextPainter tp = TextPainter(
-      //       text: span,
-      //       textAlign: TextAlign.left,
-      //       textDirection: TextDirection.ltr);
-      //   tp.layout();
-      //   tp.paint(
-      //       canvas,
-      //       Offset(detectedObject.boundingBox.left * scaleX,
-      //           detectedObject.boundingBox.top * scaleY));
-      //   break;
-      // }
+      var list = detectedObject.labels;
+      for (Label label in list) {
+        print("${label.text}   ${label.confidence.toStringAsFixed(2)}");
+        TextSpan span = TextSpan(
+            text: label.text,
+            style: const TextStyle(fontSize: 25, color: Colors.blue));
+        TextPainter tp = TextPainter(
+            text: span,
+            textAlign: TextAlign.left,
+            textDirection: TextDirection.ltr);
+        tp.layout();
+        tp.paint(
+            canvas,
+            Offset(detectedObject.boundingBox.left * scaleX,
+                detectedObject.boundingBox.top * scaleY));
+        break;
+      }
     }
   }
 

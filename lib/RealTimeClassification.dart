@@ -9,15 +9,15 @@ import 'dart:io';
 import 'package:logger/logger.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 
-class CameraExampleHome extends StatefulWidget {
-  const CameraExampleHome({super.key, required this.cameras});
+class RealTimeClassification extends StatefulWidget {
+  const RealTimeClassification({super.key, required this.cameras});
   final List<CameraDescription> cameras;
 
   @override
-  State<CameraExampleHome> createState() => _CameraExampleHomeState();
+  State<RealTimeClassification> createState() => _RealTimeClassificationState();
 }
 
-class _CameraExampleHomeState extends State<CameraExampleHome> {
+class _RealTimeClassificationState extends State<RealTimeClassification> {
   // Use `late` as we will initialize it in `initState`
   late CameraController controller;
 

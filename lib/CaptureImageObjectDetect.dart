@@ -36,7 +36,8 @@ class _CaptureImageObjectDetectState extends State<CaptureImageObjectDetect> {
     // loadModel();
     // loadModelLocal();
 
-    loadObjectDetectionModel();
+    // loadObjectDetectionModel();
+    loadModelLocalObjectDetect();
     imagePicker = ImagePicker();
     // final ImageLabelerOptions options = ImageLabelerOptions(
     //   confidenceThreshold: 0.5,
@@ -142,6 +143,20 @@ class _CaptureImageObjectDetectState extends State<CaptureImageObjectDetect> {
       modelPath: modelPath,
     );
     imageLabeler = ImageLabeler(options: options);
+  }
+
+  loadModelLocalObjectDetect() async {
+    final modelPath = await getModelPath('assets/ml/fruits_tm.tflite');
+    // final modelPath = await getModelPath('assets/ml/model_mobilenet.tflite');
+    // final modelPath = await getModelPath('assets/ml/model_unquant.tflite');
+
+    final options = LocalObjectDetectorOptions(
+      mode: DetectionMode.single,
+      modelPath: modelPath,
+      classifyObjects: true,
+      multipleObjects: true,
+    );
+    objectDetector = ObjectDetector(options: options);
   }
 
   Future<String> getModelPath(String asset) async {
